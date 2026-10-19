@@ -1,7 +1,7 @@
 # Husker's Add-ons
 
-Kodi utilities from Husker. Prepared for publication at
-https://bmcleodcd.github.io/husker-addons/ (deployment pending).
+Kodi utilities from Husker. Published through GitHub Pages at
+https://bmcleodcd.github.io/husker-addons/.
 
 Repository ID: `repository.husker`. Display name: **Husker's Add-ons**.
 
@@ -60,8 +60,7 @@ To add future add-ons, place each source in `addons/<addon-id>/` with its own
 `docs/script.husker.wifi/`. Installed, enabled and tested on Tinybox on
 18 October 2026, including live incorrect-password recovery and successful
 reconnection. See its README for administrator helper setup and limitations.
-Publication is pending GitHub authentication; the Pages URL is now configured
-in the release build command.
+GitHub Pages publishes the `docs/` directory from the `main` branch.
 
 The catalogue MD5 is Kodi's change marker, not a package security signature.
 `hashes=false` avoids relying on content-hash HTTP headers that static hosting
