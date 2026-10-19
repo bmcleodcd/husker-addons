@@ -1,0 +1,9 @@
+<addon id="script.husker.wifi" name="Wi-Fi manager" version="1.3.0" provider-name="Husker">
+  <requires><import addon="xbmc.python" version="3.0.0"/></requires>
+  <extension point="xbmc.python.script" library="default.py"><provides>executable</provides></extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">View and change your Wi-Fi connection</summary>
+    <description lang="en_GB">Network name, IP, signal and wireless link speed. Scan, connect and retry passwords. Requires the administrator-installed Husker Wi-Fi helper and Netplan/wpa_supplicant on Linux.</description>
+    <platform>linux</platform><license>MIT</license>
+  </extension>
+</addon>

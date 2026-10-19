@@ -1,0 +1,8 @@
+<window><defaultcontrol always="true">43</defaultcontrol><coordinates><system>1</system><posx>0</posx><posy>0</posy></coordinates><controls>
+<control type="image"><left>0</left><top>0</top><width>1280</width><height>720</height><texture colordiffuse="FF182330">husker-white.png</texture></control>
+<control type="label"><left>90</left><top>22</top><width>1100</width><height>42</height><font>font30</font><textcolor>FFFFFFFF</textcolor><label>Share Wi-Fi — scan with your phone camera</label></control>
+<control type="label" id="42"><left>90</left><top>72</top><width>1100</width><height>36</height><align>center</align><font>font13</font><textcolor>FFFFFFFF</textcolor></control>
+<control type="image" id="41"><left>400</left><top>116</top><width>480</width><height>480</height><aspectratio>keep</aspectratio><texture/></control>
+<control type="label"><left>90</left><top>604</top><width>1100</width><height>30</height><align>center</align><font>font13</font><textcolor>FFFFFFFF</textcolor><label>This code contains the Wi-Fi password. Anyone scanning it can join.</label></control>
+<control type="button" id="43"><left>480</left><top>650</top><width>320</width><height>45</height><font>font13</font><textcolor>FFFFFFFF</textcolor><label>Close QR code</label><texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus><texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus></control>
+</controls></window>

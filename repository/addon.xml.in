@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="repository.husker" name="Husker's Add-ons" version="1.0.0" provider-name="Husker">
+  <extension point="xbmc.addon.repository">
+    <dir minversion="19.0.0">
+      <info>@BASE_URL@/addons.xml</info>
+      <checksum>@BASE_URL@/addons.xml.md5</checksum>
+      <datadir>@BASE_URL@/</datadir>
+      <hashes>false</hashes>
+    </dir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Kodi utilities from Husker</summary>
+    <description lang="en_GB">Husker's collection of Kodi add-ons.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+  </extension>
+</addon>

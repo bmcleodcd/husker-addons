@@ -1,0 +1,285 @@
+<?xml version='1.0' encoding='utf-8'?>
+<window>
+  <defaultcontrol always="true">20</defaultcontrol>
+  <coordinates>
+    <system>1</system>
+    <posx>0</posx>
+    <posy>0</posy>
+  </coordinates>
+  <controls>
+    <control type="image">
+      <left>0</left>
+      <top>0</top>
+      <width>1280</width>
+      <height>720</height>
+      <texture colordiffuse="CC000000">husker-white.png</texture>
+    </control>
+    <control type="image">
+      <left>60</left>
+      <top>35</top>
+      <width>1160</width>
+      <height>650</height>
+      <texture colordiffuse="FF182330">husker-white.png</texture>
+    </control>
+    <control type="label" id="10">
+      <left>90</left>
+      <top>52</top>
+      <width>1050</width>
+      <height>42</height>
+      <font>font30</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <label>Wi-Fi manager</label>
+    </control>
+    <control type="textbox" id="11">
+      <left>90</left>
+      <top>104</top>
+      <width>1080</width>
+      <height>65</height>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <text>Reading connection details…</text>
+    </control>
+    <control type="textbox" id="12">
+      <left>90</left>
+      <top>176</top>
+      <width>1080</width>
+      <height>64</height>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <text>Starting Wi-Fi manager…</text>
+    </control>
+    <control type="label" id="13">
+      <left>90</left>
+      <top>355</top>
+      <width>1080</width>
+      <height>35</height>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <label>Selected network: —</label>
+    </control>
+    <control type="textbox" id="14">
+      <left>90</left>
+      <top>395</top>
+      <width>1080</width>
+      <height>35</height>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <text>Password: —</text>
+    </control>
+    <control type="list" id="30">
+      <left>90</left>
+      <top>248</top>
+      <width>1080</width>
+      <height>100</height>
+      <onup>20</onup>
+      <ondown>26</ondown>
+      <onleft>20</onleft>
+      <onright>26</onright>
+      <itemlayout height="40" width="1080">
+        <control type="label">
+          <left>12</left>
+          <top>0</top>
+          <width>1050</width>
+          <height>40</height>
+          <font>font13</font>
+          <textcolor>FFEEEEEE</textcolor>
+          <label>$INFO[ListItem.Label]</label>
+        </control>
+      </itemlayout>
+      <focusedlayout height="40" width="1080">
+        <control type="image">
+          <width>1080</width>
+          <height>40</height>
+          <texture colordiffuse="FF286CA0">husker-white.png</texture>
+        </control>
+        <control type="label">
+          <left>12</left>
+          <top>0</top>
+          <width>1050</width>
+          <height>40</height>
+          <font>font13</font>
+          <textcolor>FFFFFFFF</textcolor>
+          <label>$INFO[ListItem.Label]</label>
+        </control>
+      </focusedlayout>
+    </control>
+    <control type="button" id="20">
+      <left>90</left>
+      <top>550</top>
+      <width>250</width>
+      <height>48</height>
+      <label>Scan networks</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>28</onleft>
+      <onright>21</onright>
+      <onup>26</onup>
+      <ondown>21</ondown>
+    </control>
+    <control type="button" id="21">
+      <left>355</left>
+      <top>550</top>
+      <width>250</width>
+      <height>48</height>
+      <label>Refresh</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>20</onleft>
+      <onright>22</onright>
+      <onup>26</onup>
+      <ondown>22</ondown>
+    </control>
+    <control type="button" id="22">
+      <left>620</left>
+      <top>550</top>
+      <width>250</width>
+      <height>48</height>
+      <label>Edit password</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>21</onleft>
+      <onright>23</onright>
+      <onup>26</onup>
+      <ondown>23</ondown>
+    </control>
+    <control type="button" id="23">
+      <left>885</left>
+      <top>550</top>
+      <width>285</width>
+      <height>48</height>
+      <label>Show password</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>22</onleft>
+      <onright>24</onright>
+      <onup>26</onup>
+      <ondown>24</ondown>
+    </control>
+    <control type="button" id="24">
+      <left>620</left>
+      <top>612</top>
+      <width>250</width>
+      <height>48</height>
+      <label>Connect</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>29</onleft>
+      <onright>25</onright>
+      <onup>30</onup>
+      <ondown>25</ondown>
+    </control>
+    <control type="button" id="25">
+      <left>885</left>
+      <top>612</top>
+      <width>285</width>
+      <height>48</height>
+      <label>Close</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+      <onleft>24</onleft>
+      <onright>29</onright>
+      <onup>30</onup>
+      <ondown>20</ondown>
+    </control>
+    <control type="label" id="16">
+      <left>90</left>
+      <top>430</top>
+      <width>1080</width>
+      <height>30</height>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <label>MAC override: Loading…</label>
+    </control>
+    <control type="label" id="17">
+      <left>90</left>
+      <top>462</top>
+      <width>1080</width>
+      <height>30</height>
+      <font>font12</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <label>Checking adapter…</label>
+    </control>
+    <control type="button" id="26">
+      <left>90</left>
+      <top>495</top>
+      <width>250</width>
+      <height>44</height>
+      <label>Edit MAC</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <onleft>28</onleft>
+      <onright>27</onright>
+      <onup>30</onup>
+      <ondown>20</ondown>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+    </control>
+    <control type="button" id="27">
+      <left>355</left>
+      <top>495</top>
+      <width>250</width>
+      <height>44</height>
+      <label>Apply MAC</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <onleft>26</onleft>
+      <onright>28</onright>
+      <onup>30</onup>
+      <ondown>20</ondown>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+    </control>
+    <control type="button" id="28">
+      <left>620</left>
+      <top>495</top>
+      <width>550</width>
+      <height>44</height>
+      <label>Restore hardware MAC</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <onleft>27</onleft>
+      <onright>20</onright>
+      <onup>30</onup>
+      <ondown>20</ondown>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+    </control>
+    <control type="button" id="29">
+      <left>90</left>
+      <top>612</top>
+      <width>515</width>
+      <height>48</height>
+      <label>Share Wi-Fi QR code</label>
+      <font>font13</font>
+      <textcolor>FFFFFFFF</textcolor>
+      <focusedcolor>FFFFFFFF</focusedcolor>
+      <onleft>25</onleft>
+      <onright>24</onright>
+      <onup>20</onup>
+      <ondown>20</ondown>
+      <texturefocus colordiffuse="FF286CA0">husker-white.png</texturefocus>
+      <texturenofocus colordiffuse="FF34465A">husker-white.png</texturenofocus>
+    </control>
+  </controls>
+</window>

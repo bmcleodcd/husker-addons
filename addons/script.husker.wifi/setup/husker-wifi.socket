@@ -1,0 +1,14 @@
+[Unit]
+Description=Husker Wi-Fi local Kodi control socket
+
+[Socket]
+ListenStream=/home/kodi/.kodi/userdata/husker-wifi.sock
+SocketUser=kodi
+SocketGroup=kodi
+SocketMode=0600
+Accept=yes
+RemoveOnStop=yes
+MaxConnections=4
+
+[Install]
+WantedBy=sockets.target

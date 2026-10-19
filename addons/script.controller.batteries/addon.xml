@@ -1,0 +1,6 @@
+<addon id="script.controller.batteries" name="Controller batteries" version="1.0.1" provider-name="Husker">
+<requires><import addon="xbmc.python" version="3.0.0"/></requires>
+<extension point="xbmc.python.script" library="default.py"><provides>executable</provides></extension>
+<extension point="xbmc.service" library="service.py"/>
+<extension point="xbmc.addon.metadata"><summary lang="en_GB">PS3 controller batteries and low-battery alerts</summary><description lang="en_GB">Shows connected Sony controller batteries. Alerts at 25% and critically low, without repeated alerts after reconnecting.</description><platform>linux</platform><license>MIT</license></extension>
+</addon>

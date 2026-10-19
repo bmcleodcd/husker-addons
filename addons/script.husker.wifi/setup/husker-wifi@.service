@@ -1,0 +1,15 @@
+[Unit]
+Description=Husker Wi-Fi request
+
+[Service]
+Type=exec
+ExecStart=/usr/local/sbin/husker-wifi
+StandardInput=socket
+StandardOutput=inherit
+StandardError=journal
+TimeoutStartSec=120
+RuntimeMaxSec=120
+UMask=0077
+NoNewPrivileges=yes
+ProtectHome=read-only
+PrivateTmp=yes

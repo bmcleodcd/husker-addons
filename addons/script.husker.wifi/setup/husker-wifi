@@ -1,0 +1,295 @@
+#!/usr/bin/python3 -I
+"""Root-owned, fixed-action Wi-Fi helper. JSON stdin; never logs credentials."""
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+
+
+class Control:
+    def __init__(self, interface):
+        self.directory = tempfile.TemporaryDirectory(prefix='husker-wifi-', dir='/run')
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.sock.settimeout(4)
+        self.sock.bind(self.directory.name + '/ctrl')
+        self.sock.connect('/run/wpa_supplicant/' + interface)
+
+    def command(self, text):
+        self.sock.send(text.encode())
+        return self.sock.recv(262144).decode('utf-8', 'replace').strip()
+
+    def checked(self, text):
+        value = self.command(text)
+        if value != 'OK':
+            raise ValueError('Wireless adapter rejected the connection settings.')
+
+    def close(self):
+        self.sock.close()
+        self.directory.cleanup()
+
+
+def pairs(text):
+    return dict(line.split('=', 1) for line in text.splitlines() if '=' in line)
+
+
+def decode_ssid(value):
+    # Supplicant escapes control bytes, backslashes and non-ASCII UTF-8 bytes.
+    raw = bytearray()
+    index = 0
+    while index < len(value):
+        if value[index:index + 2] == '\\x' and re.fullmatch('[0-9a-fA-F]{2}', value[index + 2:index + 4]):
+            raw.append(int(value[index + 2:index + 4], 16))
+            index += 4
+        elif value[index:index + 2] == '\\\\':
+            raw.append(92)
+            index += 2
+        else:
+            raw.extend(value[index].encode())
+            index += 1
+    return raw.decode('utf-8', 'replace')
+
+
+def networks(text):
+    found = {}
+    for line in text.splitlines()[1:]:
+        fields = line.split('\t', 4)
+        if len(fields) != 5 or not fields[4]:
+            continue
+        bssid, frequency, strength, flags, ssid = fields
+        ssid = decode_ssid(ssid)
+        entry = dict(ssid=ssid, signal=int(strength), flags=flags)
+        if ssid not in found or entry['signal'] > found[ssid]['signal']:
+            found[ssid] = entry
+    return sorted(found.values(), key=lambda n: -n['signal'])
+
+
+def update_netplan(interface, change):
+    import yaml
+    matches = []
+    for path in sorted(Path('/etc/netplan').glob('*.yaml')):
+        data = yaml.safe_load(path.read_text()) or {}
+        wifi = data.get('network', {}).get('wifis', {})
+        if interface in wifi:
+            matches.append((path, data))
+    if len(matches) != 1:
+        raise ValueError('Connected, but cannot save: expected one Netplan definition for this adapter.')
+    path, data = matches[0]
+    original = path.read_bytes()
+    backup = Path('/var/backups/husker-wifi')
+    backup.mkdir(mode=0o700, exist_ok=True)
+    backup.chmod(0o700)
+    name = backup / (path.name + '.' + time.strftime('%Y%m%d-%H%M%S') + '.' + str(time.time_ns()))
+    name.write_bytes(original)
+    name.chmod(0o600)
+    change(data['network']['wifis'][interface])
+    temporary = path.with_suffix('.husker-tmp')
+    try:
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'w') as stream:
+            yaml.safe_dump(data, stream, sort_keys=False, allow_unicode=True)
+        os.replace(temporary, path)
+        result = subprocess.run(['/usr/sbin/netplan', 'generate'], capture_output=True, timeout=20)
+        if result.returncode:
+            raise ValueError('Netplan validation failed; original configuration restored.')
+    except Exception:
+        path.write_bytes(original)
+        path.chmod(0o600)
+        subprocess.run(['/usr/sbin/netplan', 'generate'], capture_output=True, timeout=20)
+        raise
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def persist(interface, ssid, secret, security):
+    access = {}
+    if security == 'SAE':
+        access = {'auth': {'key-management': 'sae', 'password': secret}}
+    elif secret:
+        access = {'password': secret}
+    update_netplan(interface, lambda config: config.update({'access-points': {ssid: access}}))
+
+
+def valid_mac(value):
+    if not isinstance(value, str) or not re.fullmatch(r'[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}', value):
+        raise ValueError('Enter six hexadecimal pairs, for example 02:11:22:33:44:55.')
+    value = value.lower()
+    if value == '00:00:00:00:00:00' or int(value[:2], 16) & 1:
+        raise ValueError('Use a nonzero unicast MAC address, not multicast or broadcast.')
+    return value
+
+
+def mac_info(interface):
+    current = (Path('/sys/class/net') / interface / 'address').read_text().strip().lower()
+    permanent = ''
+    try:
+        result = subprocess.run(['/usr/sbin/ethtool', '-P', interface], capture_output=True, text=True, timeout=4)
+        match = re.search(r'Permanent address: ([0-9a-fA-F:]{17})', result.stdout)
+        if match:
+            permanent = valid_mac(match.group(1))
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        pass
+    return {'current': current, 'permanent': permanent,
+            'available': bool(permanent) and Path('/usr/sbin/ip').exists(),
+            'support': 'Driver support is checked when applying an override.'}
+
+
+def change_mac(ctrl, interface, request):
+    info = mac_info(interface)
+    if not info['available']:
+        raise ValueError('MAC override unavailable: cannot determine the hardware address or find iproute2.')
+    restore = request.get('restore') is True
+    target = info['permanent'] if restore else valid_mac(request.get('mac'))
+    old = info['current']
+    before = pairs(ctrl.command('STATUS'))
+    def link(*arguments):
+        result = subprocess.run(['/usr/sbin/ip', 'link', 'set', 'dev', interface, *arguments],
+                                capture_output=True, text=True, timeout=5)
+        if result.returncode:
+            raise ValueError('The wireless driver rejected the MAC change. It may not support overriding the address.')
+    def reconnect():
+        link('up')
+        ctrl.command('REASSOCIATE')
+        if before.get('wpa_state') != 'COMPLETED':
+            return True
+        for _ in range(18):
+            time.sleep(1)
+            state = pairs(ctrl.command('STATUS'))
+            if state.get('wpa_state') == 'COMPLETED' and state.get('ssid') == before.get('ssid') and state.get('ip_address'):
+                return True
+        return False
+    try:
+        if target != old:
+            link('down')
+            link('address', target)
+            if not reconnect():
+                raise ValueError('Wi-Fi did not reconnect with the new MAC address.')
+        actual = mac_info(interface)['current']
+        if actual != target:
+            raise ValueError('The driver did not retain the requested MAC address.')
+        def save(config):
+            # Netplan's networkd Wi-Fi backend requires the interface name, not match:.
+            if restore:
+                config.pop('macaddress', None)
+            else:
+                config['macaddress'] = target
+        update_netplan(interface, save)
+        return {'ok': True, 'message': ('Hardware MAC restored: ' if restore else 'MAC override applied: ') + target +
+                '. Saved for reboot.', 'mac': mac_info(interface)}
+    except Exception as error:
+        try:
+            link('down')
+            link('address', old)
+            recovered = reconnect()
+        except Exception:
+            recovered = False
+        return {'ok': False, 'message': str(error) + (' Previous MAC restored.' if recovered else
+                ' Could not verify recovery; check the Wi-Fi connection.'), 'mac': mac_info(interface)}
+
+
+def connect(ctrl, interface, request):
+    ssid, password = request.get('ssid'), request.get('password', '')
+    if not isinstance(ssid, str) or not 1 <= len(ssid.encode()) <= 32:
+        raise ValueError('Invalid network name.')
+    if not isinstance(password, str) or '\n' in password or '\r' in password or '\0' in password:
+        raise ValueError('Invalid password.')
+    visible = [n for n in networks(ctrl.command('SCAN_RESULTS')) if n['ssid'] == ssid]
+    if not visible:
+        raise ValueError('Network is no longer visible. Scan again.')
+    flags = visible[0]['flags']
+    if 'EAP' in flags or 'WEP' in flags:
+        raise ValueError('Enterprise and WEP networks are not supported.')
+    security = 'WPA-PSK' if 'PSK' in flags else ('SAE' if 'SAE' in flags else 'NONE')
+    if security == 'WPA-PSK' and not (8 <= len(password.encode()) <= 63 or re.fullmatch('[0-9a-fA-F]{64}', password)):
+        raise ValueError('WPA password must be 8Ã¢â‚¬â€œ63 bytes, or a 64-digit hexadecimal key.')
+    if security == 'SAE' and not 1 <= len(password.encode()) <= 63:
+        raise ValueError('WPA3 password must be 1Ã¢â‚¬â€œ63 bytes.')
+    previous = pairs(ctrl.command('STATUS')).get('id')
+    candidate = ctrl.command('ADD_NETWORK')
+    if not candidate.isdigit():
+        raise ValueError('Cannot create a wireless connection.')
+    success = False
+    try:
+        ctrl.checked('SET_NETWORK ' + candidate + ' ssid ' + ssid.encode().hex())
+        ctrl.checked('SET_NETWORK ' + candidate + ' key_mgmt ' + security)
+        if security == 'WPA-PSK':
+            key = password if re.fullmatch('[0-9a-fA-F]{64}', password) else hashlib.pbkdf2_hmac('sha1', password.encode(), ssid.encode(), 4096, 32).hex()
+            ctrl.checked('SET_NETWORK ' + candidate + ' psk ' + key)
+        elif security == 'SAE':
+            quoted = '"' + password.replace('\\', '\\\\').replace('"', '\\"') + '"'
+            ctrl.checked('SET_NETWORK ' + candidate + ' sae_password ' + quoted)
+            ctrl.checked('SET_NETWORK ' + candidate + ' ieee80211w 2')
+        ctrl.checked('SELECT_NETWORK ' + candidate)
+        for _ in range(30):
+            time.sleep(1)
+            status = pairs(ctrl.command('STATUS'))
+            if status.get('id') == candidate and status.get('wpa_state') == 'COMPLETED':
+                persist(interface, ssid, password, security)
+                success = True
+                return {'ok': True, 'message': 'Connected to ' + ssid + '. Saved for reboot.\nIP: ' + status.get('ip_address', 'Waiting for DHCP; refresh shortly.')}
+        return {'ok': False, 'message': 'Connection failed. Check the password and signal. Previous connection restored where available.'}
+    finally:
+        if not success:
+            ctrl.command('REMOVE_NETWORK ' + candidate)
+            if previous and previous.isdigit():
+                ctrl.command('SELECT_NETWORK ' + previous)
+
+
+def saved_password(interface, ssid):
+    import yaml
+    if not isinstance(ssid, str) or not 1 <= len(ssid.encode()) <= 32:
+        raise ValueError('Select a valid network first.')
+    password = ''
+    for path in sorted(Path('/etc/netplan').glob('*.yaml')):
+        data = yaml.safe_load(path.read_text()) or {}
+        access = data.get('network', {}).get('wifis', {}).get(interface, {}).get('access-points', {}).get(ssid, {})
+        if access:
+            password = access.get('password') or access.get('auth', {}).get('password') or ''
+    return {'password': password}
+
+
+def main():
+    request = json.loads(sys.stdin.read(8192))
+    action = request.get('action')
+    if action not in ('status', 'scan', 'connect', 'password', 'mac'):
+        raise ValueError('Unsupported action.')
+    devices = sorted(p.name for p in Path('/sys/class/net').iterdir() if (p / 'wireless').exists())
+    if not devices:
+        raise ValueError('No wireless adapter found.')
+    interface = devices[0]
+    if action == 'password':
+        return saved_password(interface, request.get('ssid'))
+    with open('/run/lock/husker-wifi.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        ctrl = Control(interface)
+        try:
+            if action == 'status':
+                status = pairs(ctrl.command('STATUS'))
+                if 'ssid' in status:
+                    status['ssid'] = decode_ssid(status['ssid'])
+                return dict(interface=interface, status=status, signal=pairs(ctrl.command('SIGNAL_POLL')), mac=mac_info(interface))
+            if action == 'mac':
+                return change_mac(ctrl, interface, request)
+            if action == 'scan':
+                ctrl.command('SCAN')
+                time.sleep(4)
+                return {'networks': networks(ctrl.command('SCAN_RESULTS'))}
+            return connect(ctrl, interface, request)
+        finally:
+            ctrl.close()
+
+
+if __name__ == '__main__':
+    os.umask(0o077)
+    try:
+        print(json.dumps(main()))
+    except ValueError as error:
+        print(json.dumps({'error': str(error)}))
+    except Exception:
+        print(json.dumps({'error': 'Wi-Fi operation failed. Check the adapter and administrator setup.'}))
